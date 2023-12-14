@@ -64,6 +64,13 @@ class HumanPlayer extends Player {
         }
     }
 }
+// ...
+
+// Represents a computer player, extends the Player class
+// ...
+
+// Represents a computer player, extends the Player class
+// ...
 
 // Represents a computer player, extends the Player class
 class ComputerPlayer extends Player {
@@ -77,32 +84,28 @@ class ComputerPlayer extends Player {
 
     @Override
     public void makeMove(Board board) {
-        int[] bestMove = monteCarlo(board, this.symbol, 10000); // Anzahl der Simulationen (kann angepasst werden)
-        board.getBoard()[bestMove[0]][bestMove[1]] = symbol;
+        int[] bestMove = getBestMove(board, 10000); // Anzahl der Simulationen (kann angepasst werden)
+        int row = bestMove[0];
+        int col = bestMove[1];
+
+        if (board.getBoard()[row][col] == ' ') {
+            board.getBoard()[row][col] = symbol;
+        } else {
+            // Handle the case where the chosen move is not valid
+            // This could happen if there are no available moves with positive win rates
+            System.out.println("Error: Invalid move. Choosing the first available empty space.");
+            makeRandomMove(board);
+        }
     }
 
-    private int[] monteCarlo(Board board, char playerSymbol, int simulations) {
+    private int[] getBestMove(Board board, int simulations) {
         int[] bestMove = new int[]{-1, -1};
         double bestWinRate = -1;
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (board.getBoard()[i][j] == ' ') {
-                    int winCount = 0;
-                    int loseCount = 0;
-
-                    for (int k = 0; k < simulations; k++) {
-                        Board copyBoard = copyBoard(board);
-                        copyBoard.getBoard()[i][j] = playerSymbol;
-
-                        if (simulateGame(copyBoard, playerSymbol)) {
-                            winCount++;
-                        } else {
-                            loseCount++;
-                        }
-                    }
-
-                    double winRate = (double) winCount / (winCount + loseCount);
+                    double winRate = monteCarlo(board, i, j, simulations);
 
                     if (winRate > bestWinRate) {
                         bestWinRate = winRate;
@@ -113,7 +116,73 @@ class ComputerPlayer extends Player {
             }
         }
 
+        System.out.printf("Best Move: (%d, %d) with Win Rate = %.2f%n", bestMove[0] + 1, bestMove[1] + 1, bestWinRate);
+
         return bestMove;
+    }
+
+    private double monteCarlo(Board board, int row, int col, int simulations) {
+        int winCount = 0;
+
+        for (int k = 0; k < simulations; k++) {
+            Board copyBoard = copyBoard(board);
+            copyBoard.getBoard()[row][col] = symbol;
+
+            if (simulateGame(copyBoard)) {
+                winCount++;
+            }
+        }
+
+        return (double) winCount / simulations;
+    }
+    private void makeRandomMove(Board board) {
+        // Fallback-Methode, falls keine gültigen Züge gefunden werden
+        int row, col;
+        do {
+            row = random.nextInt(3);
+            col = random.nextInt(3);
+        } while (board.getBoard()[row][col] != ' ');
+
+        board.getBoard()[row][col] = symbol;
+    }
+
+
+
+
+
+    private boolean simulateGame(Board board) {
+        // Check for a win in rows
+        for (int i = 0; i < 3; i++) {
+            if (board.getBoard()[i][0] == symbol &&
+                    board.getBoard()[i][1] == symbol &&
+                    board.getBoard()[i][2] == symbol) {
+                return true; // Computer wins
+            }
+        }
+
+        // Check for a win in columns
+        for (int j = 0; j < 3; j++) {
+            if (board.getBoard()[0][j] == symbol &&
+                    board.getBoard()[1][j] == symbol &&
+                    board.getBoard()[2][j] == symbol) {
+                return true; // Computer wins
+            }
+        }
+
+        // Check for a win in diagonals
+        if (board.getBoard()[0][0] == symbol &&
+                board.getBoard()[1][1] == symbol &&
+                board.getBoard()[2][2] == symbol) {
+            return true; // Computer wins
+        }
+
+        if (board.getBoard()[0][2] == symbol &&
+                board.getBoard()[1][1] == symbol &&
+                board.getBoard()[2][0] == symbol) {
+            return true; // Computer wins
+        }
+
+        return false; // No win
     }
 
     private Board copyBoard(Board original) {
@@ -129,12 +198,7 @@ class ComputerPlayer extends Player {
 
         return copy;
     }
-
-    private boolean simulateGame(Board board, char playerSymbol) {
-        // Implementieren Sie hier die Logik zum Simulieren eines Spiels bis zum Ende
-        // Rückgabe true, wenn der Spieler mit playerSymbol gewinnt, sonst false
-        // Beachten Sie, dass Sie den Monte Carlo Algorithmus anpassen können, um den besten Zug für den Gegner zu finden.
-        // Sie können die Simulation rekursiv für beide Spieler durchführen.
-        return false; // Dummy-Rückgabe, bitte anpassen
-    }
 }
+
+
+
